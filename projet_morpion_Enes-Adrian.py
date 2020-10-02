@@ -1,5 +1,4 @@
 # Enes Adrian
-# TODO fix clearEtAffiche(emplacement)
 from sys import stdout
 import os
 import random
@@ -31,14 +30,26 @@ def creation_grille(taille):
 def affichage(grille, tailleLigne, i1 = -1, i2 = -1):
     if (i1 > -1):
         tmp_sign = grille[i1][i2]
-        grille[i1][i2] = 'N'
+        grille[i1][i2] = 'N'           # Sélecteur
     for ligne in range(tailleLigne):
         for _ in range(tailleLigne):
             stdout.write('+-' + '-' * 2 * (tailleCase - 1))
         stdout.write('+\n')
+
+        for _ in range(tailleCase // 2):  # Intervient pour le zoom
+            for _ in range(tailleLigne):
+                stdout.write("|" + " " * (tailleCase * 2 - 1))
+            stdout.write("|\n")
+
         for symbole in grille[ligne]:
             stdout.write('|' + ' ' * (tailleCase - 1) + symbole + ' ' * (tailleCase - 1))
-        stdout.write('|\n')
+        
+        for _ in range(tailleCase // 2): # Intervient pour le zoom
+            stdout.write("|\n")
+            for _ in range(tailleLigne):
+                stdout.write("|" + " " * (tailleCase * 2 - 1))
+
+        stdout.write("|\n")
     for _ in range(tailleLigne):
         stdout.write('+-' + '-' * 2 * (tailleCase - 1))
     stdout.write('+\n\n')
@@ -199,9 +210,9 @@ def IA_GameUltim(grille, taille, caracter):
     if points[0] == 1 and nbCaracters == taille - 1:
             return (points[1], points[2])
 
-def clearEtAffiche(emplacement):
+def clearEtAffiche(grille, taille, emplacement):
     os.system("cls" if os.name == "nt" else "clear")
-    affichage(emplacement[0], emplacement[1])
+    affichage(grille, taille, emplacement[0], emplacement[1])
 
 def keyboard_gameplay(grille, emplacement, player, taille):
     key = keyboard.read_key()
@@ -211,29 +222,29 @@ def keyboard_gameplay(grille, emplacement, player, taille):
             if emplacement[1] + 1 <= taille - 1:
                 stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
                 emplacement[1] += 1 
-                clearEtAffiche(emplacement)
+                clearEtAffiche(grille, taille, emplacement)
         elif key == "gauche":
             if emplacement[1] - 1 >= 0:
                 stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
                 emplacement[1] -= 1 
-                clearEtAffiche(emplacement)
+                clearEtAffiche(grille, taille, emplacement)
         elif key == "haut":
             if emplacement[0] - 1 >= 0:
                 stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
                 emplacement[0] -= 1 
-                clearEtAffiche(emplacement)
+                clearEtAffiche(grille, taille, emplacement)
         elif key == "bas":
             if emplacement[0] + 1 <= taille - 1:
                 stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
                 emplacement[0] += 1 
-                clearEtAffiche(emplacement)
+                clearEtAffiche(grille, taille, emplacement)
         elif key == "-":
             if tailleCase - 1 > 0:
                 tailleCase -= 1
-                clearEtAffiche(emplacement)
+                clearEtAffiche(grille, taille, emplacement)
         elif key == "+":
             tailleCase += 1
-            clearEtAffiche(emplacement)
+            clearEtAffiche(grille, taille, emplacement)
         elif key == "esc": exit()
         time.sleep(0.3)
         key = keyboard.read_key()
