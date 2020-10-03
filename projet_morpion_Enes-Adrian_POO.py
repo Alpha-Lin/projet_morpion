@@ -1,5 +1,5 @@
 # Enes Adrian
-from sys import stdout
+from sys import stdout, stdin
 import os
 import random
 import keyboard
@@ -27,9 +27,13 @@ class Grille():
         self.grille = [['.'] * taille for i in range(taille)]
         self.taille = taille
         self.tailleCase = 1
+        self.nbEnter = 0
 
     def getGrille(self):
         return self.grille
+
+    def getNbEnter(self):
+        return self.nbEnter
 
     def affichage(self, i1 = -1, i2= -1):
         if (i1 > -1):
@@ -219,6 +223,7 @@ class Grille():
         self.affichage(emplacement[0], emplacement[1])
 
     def keyboard_gameplay(self, emplacement, player):
+        time.sleep(.3)
         key = keyboard.read_key()
         while not key == "enter":
             if key == "droite":
@@ -251,6 +256,7 @@ class Grille():
             elif key == "esc": exit()
             time.sleep(.3)
             key = keyboard.read_key()
+        self.nbEnter += 1
 
     def play_tour(self, player, J1, J2, computer, gameplay, robot):
         if (computer and player) or robot: #Si c'est à l'ordinateur de jouer
@@ -306,11 +312,12 @@ class Grille():
 def main():
     infos_J1 = Player()
     infos_J2 = Player()
-    computer = True if input("Souhaitez-vous jouer avec un ordinateur (O/N) : ") == "O" else False
-    keyboard_playing = True if input("Souhaitez-vous jouer avec les coordonnées ou avec le clavier ? (0/1) : ") == "1" else False
 
     while True:
-        os.system("cls" if os.name == "nt" else "clear")
+        robot = True if input("Robot vs Robot ? (O/N) : ") == "O" else False
+
+        computer = True if not robot and input("Souhaitez-vous jouer avec un ordinateur (O/N) : ") == "O" else False
+        keyboard_playing = True if not robot and input("Souhaitez-vous jouer avec les coordonnées ou avec le clavier ? (0/1) : ") == "1" else False
 
         taille_grille = input("Taille grille désirée (min 3) : ")
 
@@ -319,7 +326,7 @@ def main():
 
         grille = Grille(int(taille_grille))
 
-        robot = True if input("Robot vs Robot ? (O/N) : ") == "O" else False
+        os.system("cls" if os.name == "nt" else "clear")
 
         grille.affichage()
         player = infos_J1.getPriorite()
@@ -331,8 +338,13 @@ def main():
 
             player = not player
             if robot: time.sleep(.3)
+
+        for _ in range(grille.getNbEnter()): stdin.readline() # Clear le buffer d'entrée
+
         grille.affichage()
         
-        if input(f"Partie terminée.\nPoints joueur 1 : {infos_J1.getPoints()}\nPoints joueur 2 : {infos_J2.getPoints()}\nVoulez-vous relancer ? (O/N) : ") == "N": break        
+        if input(f"Partie terminée.\nPoints joueur 1 : {infos_J1.getPoints()}\nPoints joueur 2 : {infos_J2.getPoints()}\nVoulez-vous relancer ? (O/N) : ") == "N": break
+
+        os.system("cls" if os.name == "nt" else "clear")      
 
 main()
