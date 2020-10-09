@@ -1,352 +1,495 @@
-# Enes Adrian
+"""
+Jeu du morpion :
+
+Le but de ce jeu est d'aligner une rangée entière de son caractère pour gagner.
+Vous pouvez jouer à deux, seul ou regarder des robots s'affronter
+
+par Enes et Adrian
+"""
 from sys import stdout, stdin
 import os
 import random
-import keyboard
 import time
-
-tailleCase = 1
-nbEnter = 0
+import keyboard
 
 class Player():
+    """
+    Initialise une instance Player() correspondant à un joueur
+    """
+
     def __init__(self):
+        """
+        attributs :
+        - points : points du joueur
+        - priorité : définit s'il joue en premier
+        """
         self.points = 0
         self.priorite = False
 
     def getPoints(self):
+        """
+        Getter de l'attribut points : renvoie le nombre de points du joueur
+        """
         return self.points
     
     def getPriorite(self):
+        """
+        Getter de l'attribut priorite : renvoie si le joueur est prioritaire
+        """
         return self.priorite
 
     def incremantePoints(self):
+        """
+        Setter de l'attribut points : incrémente de 1 le nombre de points du joueur
+        """
         self.points += 1
 
     def changePriorite(self):
+        """
+        Setter de l'attribut priorite : inverser la priorité
+        """
         self.priorite = not self.priorite
 
-def creation_grille(taille):
-    return [['.'] * taille for i in range(taille)]
+class Grille():
+    """
+    Initialise une instance Grille() correspondant à la grille utilisée lors d'une manche 
+    """
 
-def affichage(grille, tailleLigne, i1 = -1, i2 = -1):
-    if (i1 > -1):
-        tmp_sign = grille[i1][i2]
-        grille[i1][i2] = 'N'           # Sélecteur
-    for ligne in range(tailleLigne):
-        for _ in range(tailleLigne):
-            stdout.write('+-' + '-' * 2 * (tailleCase - 1))
-        stdout.write('+\n')
+    def __init__(self, taille):
+        """
+        attributs : 
+        - grille = contenu de la grille
+        - taille = taille de la grille
+        - tailleCase = taille de chaque case de la grille
+        - nbEnter = nombre de fois où la touche "entrée" est pressée
+        """
+        self.grille = [['.'] * taille for i in range(taille)]
+        self.taille = taille
+        self.tailleCase = 1
+        self.nbEnter = 0
 
-        for _ in range(tailleCase // 2):  # Intervient pour le zoom
-            for _ in range(tailleLigne):
-                stdout.write("|" + " " * (tailleCase * 2 - 1))
-            stdout.write("|\n")
+    def getGrille(self):
+        """
+        "Getter de grille : renvoie la grille"
+        """
+        return self.grille
 
-        for symbole in grille[ligne]:
-            stdout.write('|' + ' ' * (tailleCase - 1) + symbole + ' ' * (tailleCase - 1))
+    def getNbEnter(self):
+        """
+        Getter de nbEnter : renvoie le nombre d'entrée fait depuis le début de la manche
+        """
+        return self.nbEnter
+
+    def affichage(self, i1 = -1, i2 = -1):
+        """
+        Affiche la grille selon un modèle +-+
         
-        for _ in range(tailleCase // 2): # Intervient pour le zoom
-            stdout.write("|\n")
-            for _ in range(tailleLigne):
-                stdout.write("|" + " " * (tailleCase * 2 - 1))
+        paramètres :
+        - i1 = ligne du sélecteur
+        - i2 = colonne du sélecteur
+        """
+        if i1 > -1:
+            tmp_sign = self.grille[i1][i2]
+            self.grille[i1][i2] = 'N'           # Sélecteur
 
-        stdout.write("|\n")
-    for _ in range(tailleLigne):
-        stdout.write('+-' + '-' * 2 * (tailleCase - 1))
-    stdout.write('+\n\n')
+        for ligne in range(self.taille):
+            for _ in range(self.taille):
+                stdout.write('+-' + '-' * 2 * (self.tailleCase - 1))
+            stdout.write('+\n')
 
-    if (i1 > -1): grille[i1][i2] = tmp_sign
+            for _ in range(self.tailleCase // 2):  # Intervient pour le zoom
+                for _ in range(self.taille):
+                    stdout.write("|" + " " * (self.tailleCase * 2 - 1))
+                stdout.write("|\n")
 
-def affichage2(grille, i1 = -1, i2 = -1):
-    tailleLigne = len(grille[0])
+            for symbole in self.grille[ligne]:
+                stdout.write('|' + ' ' * (self.tailleCase - 1) + symbole + \
+                ' ' * (self.tailleCase - 1))
 
-    if (i1 > -1):
-        tmp_sign = grille[i1][i2]
-        grille[i1][i2] = 'N'
-
-    stdout.write("  ")
-    for i in range(tailleLigne): stdout.write(str(i))
-    stdout.write("\n")
-    for ligne in range(tailleLigne):
-        stdout.write(str(ligne) + " ")
-        for symbole in grille[ligne]: stdout.write(symbole)
-        stdout.write("\n\n")
-
-    if (i1 > -1): grille[i1][i2] = tmp_sign
-
-def libre(emplacement_check, grille, taille):
-    if not (-1 < emplacement_check[0] < taille) or not (-1 < emplacement_check[1] < taille) or grille[emplacement_check[0]][emplacement_check[1]] != ".":
-        return False
-    return True
-
-def verif_win(win_or_not, first_letter, player, J1, J2):
-    if not win_or_not or first_letter == ".":
-        return False
-
-    J1.changePriorite()
-    if player:
-        stdout.write("Bravo joueur 2 vous avez gagnez.\n")
-        J2.incremantePoints()
-    else:
-        stdout.write("Bravo joueur 1 vous avez gagnez.\n")
-        J1.incremantePoints()
-    return True
-
-def is_win(grille, player, J1, J2, taille):
-    for y in range(taille):                          #lignes
-        if grille[y][0] != '.':
-            win = True
-            first_letter = grille[y][0]
-            for i in range(taille - 1):
-                if grille[y][1 + i] != first_letter:
-                    win = False
-                    break
-            if verif_win(win, first_letter, player, J1, J2): return True
-
-    for y in range(taille):                          #colonnes
-        if grille[0][y] != '.':
-            win = True
-            first_letter = grille[0][y]
-            for i in range(taille - 1):
-                if grille[1 + i][y] != first_letter:
-                    win = False
-                    break
-            if verif_win(win, first_letter, player, J1, J2): return True
-
-    if grille[0][0] != '.':
-        win = True
-        first_letter = grille[0][0]
-        for i in range(taille - 1):                          #diagonale gauche
-            if grille[i + 1][i + 1] != first_letter:
-                win = False
-                break
-        if verif_win(win, first_letter, player, J1, J2): return True
-
-    if grille[0][taille - 1] != '.':
-        win = True
-        first_letter = grille[0][taille - 1]
-        for i in range(taille - 1):                          #diagonale droite
-            if grille[i + 1][1 - i] != first_letter:
-                win = False
-                break
-        if verif_win(win, first_letter, player, J1, J2): return True
-
-def IA_Game(grille, taille, caracter, ennemi):
-    for ligne in range(taille): # vérif lignes
-        if grille[ligne].count(ennemi) == 0 and grille[ligne].count(caracter) >= taille // 3 and grille[ligne].count(".") > 0: # Intervient si caracter >= 1/3 de la ligne et ligne vide
-            return (ligne, grille[ligne].index("."))
-    for colonne in range(taille): # Intervient si caracter >= 1/3 de la colonne et colonne vide
-        nbCaracters = 0
-        nbPoints = [0, 0]
-        for ligne in range(taille):
-            if grille[ligne][colonne] == caracter: nbCaracters += 1
-            elif grille[ligne][colonne] == ".":
-                nbPoints[0] += 1 # nb_Points
-                nbPoints[1] = ligne # Ligne du point
-            elif grille[ligne][colonne] == ennemi: break
-            if nbCaracters >= taille // 3 and nbPoints[0] > 0:
-                return (nbPoints[1], colonne)
+            for _ in range(self.tailleCase // 2): # Intervient pour le zoom
+                stdout.write("|\n")
+                for _ in range(self.taille):
+                    stdout.write("|" + " " * (self.tailleCase * 2 - 1))
             
-    nbCaracters = 0    
-    points = [0, None] # nbPoints et position point
-    for i in range(taille):                          #diagonale gauche
-        if grille[i][i] == ".":
-            points[0] += 1
-            points[1] = i
-        elif grille[i][i] == caracter:
-            nbCaracters += 1
-        elif grille[i][i] == ennemi: break
-        if points[0] > 0 and nbCaracters >= taille // 3:
-            return (points[1], points[1])
+            stdout.write("|\n")
+        for _ in range(self.taille):
+            stdout.write('+-' + '-' * 2 * (self.tailleCase - 1))
+        stdout.write('+\n\n')
 
-    nbCaracters = 0    
-    points = [0, None, None] # nbPoints et position point
-    for i in range(taille):                          #diagonale gauche
-        if grille[i][taille - 1 - i] == ".":
-            points[0] += 1
-            points[1] = i
-            points[2] = taille - 1 - i
-        elif grille[i][taille - 1 - i] == caracter:
-            nbCaracters += 1
-        elif grille[i][taille - 1 - i] == ennemi: break
-        if points[0] > 0 and nbCaracters >= taille // 3:
-            return (points[1], points[2])
+        if i1 > -1:
+            self.grille[i1][i2] = tmp_sign
 
 
-def IA_GameUltim(grille, taille, caracter):
-    for ligne in range(taille):
-        if grille[ligne].count(".") == 1 and grille[ligne].count(caracter) == taille - 1:
-            return (ligne, grille[ligne].index("."))
-    for colonne in range(taille):
-        points = [0, None]
-        nbCaracters = 0
-        for ligne in range(taille):
-            if grille[ligne][colonne] == ".":
-                points[0] += 1
-                points[1] = ligne
-            elif grille[ligne][colonne] == caracter:
-                nbCaracters += 1
-        if points[0] == 1 and nbCaracters == taille - 1: # renvoie les coordonnées si il reste une place de libre
-            return (points[1], colonne)
-    nbCaracters = 0    
-    points = [0, None, None]
-    for i in range(taille):                          #diagonale gauche
-        if grille[i][i] == ".":
-            points[0] += 1
-            points[1] = i
-        elif grille[i][i] == caracter:
-            nbCaracters += 1
-    if points[0] == 1 and nbCaracters == taille - 1:
-            return (points[1], points[1])
+    def affichage2(self, i1 = -1, i2 = -1):
+        """
+        Affiche la grille selon un modèle neutre
 
-    nbCaracters = 0    
-    points = [0, None, None]
-    for i in range(taille):                          #diagonale droite
-        if grille[i][taille - 1 - i] == ".":
-            points[0] += 1
-            points[1] = i
-            points[2] = taille - 1 - i
-        elif grille[i][taille - 1 - i] == caracter:
-            nbCaracters += 1
-    if points[0] == 1 and nbCaracters == taille - 1:
-            return (points[1], points[2])
+        paramètres :
+        - i1 = ligne du sélecteur
+        - i2 = colonne du sélecteur
+        """
+        if i1 > -1:
+            tmp_sign = self.grille[i1][i2]
+            self.grille[i1][i2] = 'N'
 
-def clearEtAffiche(grille, taille, emplacement):
-    os.system("cls" if os.name == "nt" else "clear")
-    affichage(grille, taille, emplacement[0], emplacement[1])
+        stdout.write("  ")
 
-def keyboard_gameplay(grille, emplacement, player, taille):
-    time.sleep(.3)
-    key = keyboard.read_key()
-    global tailleCase
-    while not key == "enter":
-        if key == "droite":
-            if emplacement[1] + 1 <= taille - 1:
-                stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
-                emplacement[1] += 1 
-                clearEtAffiche(grille, taille, emplacement)
-        elif key == "gauche":
-            if emplacement[1] - 1 >= 0:
-                stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
-                emplacement[1] -= 1 
-                clearEtAffiche(grille, taille, emplacement)
-        elif key == "haut":
-            if emplacement[0] - 1 >= 0:
-                stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
-                emplacement[0] -= 1 
-                clearEtAffiche(grille, taille, emplacement)
-        elif key == "bas":
-            if emplacement[0] + 1 <= taille - 1:
-                stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
-                emplacement[0] += 1 
-                clearEtAffiche(grille, taille, emplacement)
-        elif key == "-":
-            if tailleCase - 1 > 0:
-                tailleCase -= 1
-                clearEtAffiche(grille, taille, emplacement)
-        elif key == "+":
-            tailleCase += 1
-            clearEtAffiche(grille, taille, emplacement)
-        elif key == "esc": exit()
-        time.sleep(0.3)
-        key = keyboard.read_key()
-    global nbEnter
-    nbEnter += 1
+        for i in range(self.taille):
+            stdout.write(str(i))
 
-    os.system("cls" if os.name == "nt" else "clear")   
+        stdout.write("\n")
+        for ligne in range(self.taille):
+            stdout.write(str(ligne) + " ")
+            for symbole in self.grille[ligne]:
+                stdout.write(symbole)
+            stdout.write("\n\n")
 
-def play_tour(player, grille, J1, J2, computer, taille, gameplay, robot):
-    if (computer and player) or robot: #Si c'est à l'ordinateur de jouer
-        caracter = "X" if player and robot else "O"
-        ennemi = "O" if player and robot else "X"
+        if i1 > -1:
+            self.grille[i1][i2] = tmp_sign
 
-        emplacement = IA_GameUltim(grille, taille, caracter) # s'il peut gagner
-        if emplacement is None:
-            emplacement = IA_GameUltim(grille, taille, ennemi) # s'il peut counter
-            if emplacement is None:
-                emplacement = IA_Game(grille, taille, caracter, ennemi) # s'il peut commencer une stratégie
-                if emplacement is None:
-                    emplacement = IA_Game(grille, taille, ennemi, caracter) # s'il peut contrer une stratégie
-                    if emplacement is None:
-                        emplacement = (random.randint(0, taille - 1), random.randint(0, taille - 1)) # au pif
+    def libre(self, emplacement_check):
+        """
+        Vérifie si l'emplacement passé en paramètre correspondant à celui dans la grille est libre
+        """
+        if not (-1 < emplacement_check[0] < self.taille) or \
+        not (-1 < emplacement_check[1] < self.taille) or \
+        self.grille[emplacement_check[0]][emplacement_check[1]] != ".":
+            return False
+        return True
 
-            while not libre(emplacement, grille, taille):
-                emplacement = (random.randint(0, taille - 1), random.randint(0, taille - 1))
+    def is_win(self, player, J1, J2):
+        """
+        Vérifie si le joueur en question a gagné.
+        
+        paramètres :
+        - player = joueur prioritaire
+        - J1 = joueur 1
+        - J2 = joueur 2
 
-        stdout.write(f"**********\nCoups de l'ordinateur : {emplacement[0]} {emplacement[1]}\n**********\n")
-    else:
-        if gameplay:
-            emplacement = [0, 0]
+        La vérification se passe en 4 étapes :
+        1) vérifie si une des lignes est remplie
+        2) vérifie si une des colonnes est remplie
+        3) vérifie si la diagonale gauche est remplie
+        4) vérifie si la diagonale droite est remplie
+        """
+        for y in range(self.taille):                          #lignes
+            if self.grille[y][0] != '.':
+                win = True
+                first_letter = self.grille[y][0]
+                for i in range(self.taille - 1):
+                    if self.grille[y][1 + i] != first_letter:
+                        win = False
+                        break
+                if self.verif_win(win, first_letter, player, J1, J2):
+                    return True
 
-            os.system("cls" if os.name == "nt" else "clear")
+        for y in range(self.taille):                          #colonnes
+            if self.grille[0][y] != '.':
+                win = True
+                first_letter = self.grille[0][y]
+                for i in range(self.taille - 1):
+                    if self.grille[1 + i][y] != first_letter:
+                        win = False
+                        break
+                if self.verif_win(win, first_letter, player, J1, J2):
+                    return True
 
-            stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
+        if self.grille[0][0] != '.':
+            win = True
+            first_letter = self.grille[0][0]
+            for i in range(self.taille - 1):                          #diagonale gauche
+                if self.grille[i + 1][i + 1] != first_letter:
+                    win = False
+                    break
+            if self.verif_win(win, first_letter, player, J1, J2):
+                return True
 
-            affichage(grille, taille, emplacement[0], emplacement[1])
+        if self.grille[0][self.taille - 1] != '.':
+            win = True
+            first_letter = self.grille[0][self.taille - 1]
+            for i in range(self.taille - 1):                          #diagonale droite
+                if self.grille[i + 1][1 - i] != first_letter:
+                    win = False
+                    break
+            if self.verif_win(win, first_letter, player, J1, J2):
+                return True
 
-            keyboard_gameplay(grille, emplacement, player, taille)
+    @staticmethod
+    def verif_win(win_or_not, first_letter, player, J1, J2):
+        """
+        Est appelé lorsque is_win a trouvé une rangée pleine du même signe.
+        La méthode va se charger de vérifier que cette rangée n'est pas constituée que de ".".
+        
+        S'il s'avère que c'est une victoire :
+        - elle change la priorité en fonction du vainqueur
+        - affiche un message de victoire
+        - incrémente de 1 les points du vainqueur
+        """
+        if not win_or_not or first_letter == ".":
+            return False
 
-            while not libre(emplacement, grille, taille):
-                keyboard_gameplay(grille, emplacement, player, taille)
-
+        J1.changePriorite()
+        if player:
+            stdout.write("Bravo joueur 2 vous avez gagnez.\n")
+            J2.incremantePoints()
         else:
-            emplacement = input("Joueur " + str(("2" if player else "1")) + " choisissez un emplacement (ligne colonne): ").split()
+            stdout.write("Bravo joueur 1 vous avez gagnez.\n")
+            J1.incremantePoints()
+        return True
 
-            while not len(emplacement) == 2 or not (emplacement[0].isnumeric() and emplacement[1].isnumeric()) or not libre(list(map(int, emplacement)), grille, taille): #vérification du bon type, de la taille et de la place choisie
-                emplacement = input("Choix Incorrect !\nJoueur " + str(("2" if player else "1")) + " choisissez un emplacement (ligne colonne): ").split()
+    def IA_Game(self, caracter, ennemi):
+        """
+        Méthode permetant à l'IA de contrer toute offensive (horizontalement, verticalement et en diagonale)
+        Elle intervient quand elle voit que 1/3 de la rangée est remplie d'uniquement un signe du joueur et de "."
 
-            emplacement = list(map(int, emplacement))
+        Paramètres :
+        - carater : définit le caractère du joueur
+        - ennemi : définit le caractère de l'adversaire du joueur
+        """
+        nbCaracters = 0    
+        points = [0, None] # nbPoints et position point
+        for i in range(self.taille):                          #diagonale gauche
+            if self.grille[i][i] == ".":
+                points[0] += 1
+                points[1] = i
+            elif self.grille[i][i] == caracter:
+                nbCaracters += 1
+            elif self.grille[i][i] == ennemi:
+                break
+            if points[0] > 0 and nbCaracters >= self.taille // 3:
+                return (points[1], points[1])
 
-    grille[emplacement[0]][emplacement[1]] = "X" if player == False else "O"
+        nbCaracters = 0    
+        points = [0, None, None] # nbPoints et position point
+        for i in range(self.taille):                          #diagonale gauche
+            if self.grille[i][self.taille - 1 - i] == ".":
+                points[0] += 1
+                points[1] = i
+                points[2] = self.taille - 1 - i
+            elif self.grille[i][self.taille - 1 - i] == caracter:
+                nbCaracters += 1
+            elif self.grille[i][self.taille - 1 - i] == ennemi:
+                break
+            if points[0] > 0 and nbCaracters >= self.taille // 3:
+                return (points[1], points[2])
 
-    affichage(grille, taille)
+        for ligne in range(self.taille): # vérif lignes
+            if self.grille[ligne].count(ennemi) == 0 and self.grille[ligne].count(caracter) >= self.taille // 3 \
+            and self.grille[ligne].count(".") > 0:                                  # Intervient si caracter >= 1/3 de la ligne et ligne vide
+                return (ligne, self.grille[ligne].index("."))
+        for colonne in range(self.taille):                                          # Intervient si caracter >= 1/3 de la colonne et colonne vide
+            nbCaracters = 0
+            nbPoints = [0, 0]
+            for ligne in range(self.taille):
+                if self.grille[ligne][colonne] == caracter:
+                    nbCaracters += 1
+                elif self.grille[ligne][colonne] == ".":
+                    nbPoints[0] += 1 # nb_Points
+                    nbPoints[1] = ligne # Ligne du point
+                elif self.grille[ligne][colonne] == ennemi:
+                    break
+                if nbCaracters >= self.taille // 3 and nbPoints[0] > 0:
+                    return (nbPoints[1], colonne)
+                
+    def IA_GameUltim(self, caracter):
+        """
+        Analyse chaque rangée afin de voir si l'une d'entre elle est quasiment pleine (remplie du même signe et d'un ".") 
 
-    return is_win(grille, player, J1, J2, taille)
+        Le paramètre caracter définit sur quel caractère se baser
+        """
+        for ligne in range(self.taille):
+            if self.grille[ligne].count(".") == 1 and self.grille[ligne].count(caracter) == self.taille - 1:
+                return (ligne, self.grille[ligne].index("."))
+        for colonne in range(self.taille):
+            points = [0, None]
+            nbCaracters = 0
+            for ligne in range(self.taille):
+                if self.grille[ligne][colonne] == ".":
+                    points[0] += 1
+                    points[1] = ligne
+                elif self.grille[ligne][colonne] == caracter:
+                    nbCaracters += 1
+            if points[0] == 1 and nbCaracters == self.taille - 1: # renvoie les coordonnées si il reste une place de libre
+                return (points[1], colonne)
+        nbCaracters = 0    
+        points = [0, None, None]
+        for i in range(self.taille):                          #diagonale gauche
+            if self.grille[i][i] == ".":
+                points[0] += 1
+                points[1] = i
+            elif self.grille[i][i] == caracter:
+                nbCaracters += 1
+        if points[0] == 1 and nbCaracters == self.taille - 1:
+            return (points[1], points[1])
 
+        nbCaracters = 0    
+        points = [0, None, None]
+        for i in range(self.taille):                          #diagonale droite
+            if self.grille[i][self.taille - 1 - i] == ".":
+                points[0] += 1
+                points[1] = i
+                points[2] = self.taille - 1 - i
+            elif self.grille[i][self.taille - 1 - i] == caracter:
+                nbCaracters += 1
+        if points[0] == 1 and nbCaracters == self.taille - 1:
+            return (points[1], points[2])
+
+    def clearEtAffiche(self, emplacement, player):
+        """
+        Nettoye la console et affiche à quel joueur est-ce au tour de jouer.
+        """
+        os.system("cls" if os.name == "nt" else "clear")
+        stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
+        self.affichage(emplacement[0], emplacement[1])
+
+    def keyboard_gameplay(self, emplacement, player):
+        """
+        définit les déplacements du joueur en fonction des touches pressées
+        grace au module "keyboard"  
+        """
+        time.sleep(.3)
+        key = keyboard.read_key()
+        while not key == "enter":
+            if key == "droite":
+                if emplacement[1] + 1 <= self.taille - 1:
+                    stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
+                    emplacement[1] += 1
+                    self.clearEtAffiche(emplacement, player)
+            elif key == "gauche":
+                if emplacement[1] - 1 >= 0:
+                    stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
+                    emplacement[1] -= 1
+                    self.clearEtAffiche(emplacement, player)
+            elif key == "haut":
+                if emplacement[0] - 1 >= 0:
+                    stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
+                    emplacement[0] -= 1
+                    self.clearEtAffiche(emplacement, player)
+            elif key == "bas":
+                if emplacement[0] + 1 <= self.taille - 1:
+                    stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
+                    emplacement[0] += 1
+                    self.clearEtAffiche(emplacement, player)
+            elif key == "-":
+                if self.tailleCase - 1 > 0: 
+                    self.tailleCase -= 1
+                    self.clearEtAffiche(emplacement, player)
+            elif key == "+":
+                self.tailleCase += 1
+                self.clearEtAffiche(emplacement, player)
+            elif key == "esc": exit()
+            time.sleep(.3)
+            key = keyboard.read_key()
+        self.nbEnter += 1
+
+    def play_tour(self, player, J1, J2, computer, gameplay, robot):
+        """
+        adrian
+        """
+        if (computer and player) or robot: #Si c'est à l'ordinateur de jouer
+            caracter = "X" if player and robot else "O"
+            ennemi = "O" if player and robot else "X"
+
+            emplacement = self.IA_GameUltim(caracter) # s'il peut gagner
+            if emplacement is None:
+                emplacement = self.IA_GameUltim(ennemi) # s'il peut counter
+                if emplacement is None:
+                    emplacement = self.IA_Game(caracter, ennemi) # s'il peut commencer une stratégie
+                    if emplacement is None:
+                        emplacement = self.IA_Game(ennemi, caracter) # s'il peut contrer une stratégie
+                        if emplacement is None:
+                            coins = [coin for coin in [(0, 0), (0, self.taille - 1), (self.taille - 1, 0), (self.taille - 1, self.taille - 1)] \
+                             if self.libre(coin)]  # les coins
+                            if coins:
+                                emplacement = random.choice(coins)
+                            else:
+                                emplacement = (random.randint(0, self.taille - 1), random.randint(0, self.taille - 1)) # au pif
+                                while not self.libre(emplacement):
+                                    emplacement = (random.randint(0, self.taille - 1), random.randint(0, self.taille - 1))
+
+            stdout.write(f"**********\nCoups de l'ordinateur : {emplacement[0]} {emplacement[1]}\n**********\n")
+        else:
+            if gameplay:
+                emplacement = [0, 0]
+
+                os.system("cls" if os.name == "nt" else "clear")
+
+                stdout.write("Joueur " + str(("2" if player else "1")) + "\n")
+
+                self.affichage(emplacement[0], emplacement[1])
+
+                self.keyboard_gameplay(emplacement, player)
+
+                while not self.libre(emplacement):
+                    self.keyboard_gameplay(emplacement, player)
+
+            else:
+                emplacement = input("Joueur " + str(("2" if player else "1")) + " choisissez un emplacement (ligne colonne): ").split()
+
+                while not len(emplacement) == 2 or not (emplacement[0].isnumeric() and emplacement[1].isnumeric())\
+                 or not self.libre(list(map(int, emplacement))): #vérification du bon type, de la taille et de la place choisie
+                    emplacement = input("Choix Incorrect !\nJoueur " + str(("2" if player else "1"))\
+                     + " choisissez un emplacement (ligne colonne): ").split()
+
+                emplacement = list(map(int, emplacement))
+
+        self.grille[emplacement[0]][emplacement[1]] = "X" if not player else "O"
+
+        self.affichage()
+
+        return self.is_win(player, J1, J2)
+    
+    def full(self):
+        """
+        Renvoie True si la grille ne contient plus aucun "."
+        """
+        return not any("." in ligne for ligne in self.grille)
 
 def main():
-    infos_J1 = Player()
-    infos_J2 = Player()
+    """
+    fonction appelant d'entrée de jeu toutes les méthodes liées aux paramètres:
+    - robot vs robot 
+    - taille de la grille 
+    - jouer contre un IA 
+
+    elle a aussi pour but de rendre plus propre le terminal grace à des clears
+    """
+    j1 = Player()
+    j2 = Player()
 
     while True:
-        global nbEnter
-        nbEnter = 0
+        robot = input("Robot vs Robot ? (O/N) : ") == "O"
 
-        robot = True if input("Robot vs Robot ? (O/N) : ") == "O" else False
-
-        computer = True if not robot and input("Souhaitez-vous jouer avec un ordinateur (O/N) : ") == "O" else False
-        keyboard_playing = True if not robot and input("Souhaitez-vous jouer avec les coordonnées ou avec le clavier ? (0/1) : ") == "1" else False
+        computer = not robot and input("Souhaitez-vous jouer avec un ordinateur (O/N) : ") == "O"
+        keyboard_playing = not robot and input("Souhaitez-vous jouer avec les coordonnées ou avec le clavier ? (0/1) : ") == "1"
 
         taille_grille = input("Taille grille désirée (min 3) : ")
 
         while not taille_grille.isnumeric() or int(taille_grille) < 3:
             taille_grille = input("Choix incorrect ! Taille grille désirée (min 3) : ")
 
-        taille_grille = int(taille_grille)
-
-        grille = creation_grille(taille_grille)
+        grille = Grille(int(taille_grille))
 
         os.system("cls" if os.name == "nt" else "clear")
 
-        affichage(grille, taille_grille)
-        player = infos_J1.getPriorite()
+        grille.affichage()
+        player = j1.getPriorite()
 
-        while not play_tour(player, grille, infos_J1, infos_J2, computer, taille_grille, keyboard_playing, robot):
-            if not any("." in ligne for ligne in grille):
+        while not grille.play_tour(player, j1, j2, computer, keyboard_playing, robot):
+            if grille.full():
                 stdout.write("Partie nulle\n")
                 break
 
             player = not player
             if robot: time.sleep(.3)
 
-        print(nbEnter)
+        for _ in range(grille.getNbEnter()): stdin.readline() # Clear le buffer d'entrée
 
-        for _ in range(nbEnter): stdin.readline() # Clear le buffer d'entrée
-
-        affichage(grille, taille_grille)
+        grille.affichage()
         
-        if input(f"Partie terminée.\nPoints joueur 1 : {infos_J1.getPoints()}\nPoints joueur 2 : {infos_J2.getPoints()}\nVoulez-vous relancer ? (O/N) : ") == "N": break
+        if input(f"Partie terminée.\nPoints joueur 1 : {j1.getPoints()}\nPoints joueur 2 :\
+         {j2.getPoints()}\nVoulez-vous relancer ? (O/N) : ") == "N": break
 
-        os.system("cls" if os.name == "nt" else "clear")
+        os.system("cls" if os.name == "nt" else "clear")      
 
 main()
