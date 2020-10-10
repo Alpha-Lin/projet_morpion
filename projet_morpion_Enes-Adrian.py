@@ -7,6 +7,7 @@ Vous pouvez jouer à deux, seul ou regarder des robots s'affronter
 par Enes et Adrian
 """
 from sys import stdout, stdin
+import sys
 import os
 import random
 import time
@@ -31,7 +32,7 @@ class Player():
         Getter de l'attribut points : renvoie le nombre de points du joueur
         """
         return self.points
-    
+
     def getPriorite(self):
         """
         Getter de l'attribut priorite : renvoie si le joueur est prioritaire
@@ -51,13 +52,11 @@ class Player():
         self.priorite = not self.priorite
 
 class Grille():
-    """
-    Initialise une instance Grille() correspondant à la grille utilisée lors d'une manche 
-    """
+    """Initialise une instance Grille() correspondant à la grille utilisée lors d'une manche."""
 
     def __init__(self, taille):
         """
-        attributs : 
+        attributs :
         - grille = contenu de la grille
         - taille = taille de la grille
         - tailleCase = taille de chaque case de la grille
@@ -83,7 +82,7 @@ class Grille():
     def affichage(self, i1 = -1, i2 = -1):
         """
         Affiche la grille selon un modèle +-+
-        
+
         paramètres :
         - i1 = ligne du sélecteur
         - i2 = colonne du sélecteur
@@ -110,7 +109,7 @@ class Grille():
                 stdout.write("|\n")
                 for _ in range(self.taille):
                     stdout.write("|" + " " * (self.tailleCase * 2 - 1))
-            
+
             stdout.write("|\n")
         for _ in range(self.taille):
             stdout.write('+-' + '-' * 2 * (self.tailleCase - 1))
@@ -160,7 +159,7 @@ class Grille():
     def is_win(self, player, J1, J2):
         """
         Vérifie si le joueur en question a gagné.
-        
+
         paramètres :
         - player = joueur prioritaire
         - J1 = joueur 1
@@ -219,7 +218,7 @@ class Grille():
         """
         Est appelé lorsque is_win a trouvé une rangée pleine du même signe.
         La méthode va se charger de vérifier que cette rangée n'est pas constituée que de ".".
-        
+
         S'il s'avère que c'est une victoire :
         - elle change la priorité en fonction du vainqueur
         - affiche un message de victoire
@@ -239,14 +238,17 @@ class Grille():
 
     def IA_Game(self, caracter, ennemi):
         """
-        Méthode permetant à l'IA de contrer toute offensive (horizontalement, verticalement et en diagonale)
-        Elle intervient quand elle voit que 1/3 de la rangée est remplie d'uniquement un signe du joueur et de "."
+        Méthode permetant à l'IA de contrer toute offensive (horizontalement, verticalement et en
+        diagonale)
+
+        Elle intervient quand elle voit que 1/3 de la rangée est remplie d'uniquement un signe du
+        joueur et de "."
 
         Paramètres :
         - carater : définit le caractère du joueur
         - ennemi : définit le caractère de l'adversaire du joueur
         """
-        nbCaracters = 0    
+        nbCaracters = 0
         points = [0, None] # nbPoints et position point
         for i in range(self.taille):                          #diagonale gauche
             if self.grille[i][i] == ".":
@@ -259,7 +261,7 @@ class Grille():
             if points[0] > 0 and nbCaracters >= self.taille // 3:
                 return (points[1], points[1])
 
-        nbCaracters = 0    
+        nbCaracters = 0
         points = [0, None, None] # nbPoints et position point
         for i in range(self.taille):                          #diagonale gauche
             if self.grille[i][self.taille - 1 - i] == ".":
@@ -274,10 +276,11 @@ class Grille():
                 return (points[1], points[2])
 
         for ligne in range(self.taille): # vérif lignes
-            if self.grille[ligne].count(ennemi) == 0 and self.grille[ligne].count(caracter) >= self.taille // 3 \
-            and self.grille[ligne].count(".") > 0:                                  # Intervient si caracter >= 1/3 de la ligne et ligne vide
+            if self.grille[ligne].count(ennemi) == 0 and \
+            self.grille[ligne].count(caracter) >= self.taille // 3 and \
+            self.grille[ligne].count(".") > 0:   # Si caracter >= 1/3 de la ligne et ligne vide
                 return (ligne, self.grille[ligne].index("."))
-        for colonne in range(self.taille):                                          # Intervient si caracter >= 1/3 de la colonne et colonne vide
+        for colonne in range(self.taille):       # Si caracter >= 1/3 de la colonne et colonne vide
             nbCaracters = 0
             nbPoints = [0, 0]
             for ligne in range(self.taille):
@@ -290,15 +293,17 @@ class Grille():
                     break
                 if nbCaracters >= self.taille // 3 and nbPoints[0] > 0:
                     return (nbPoints[1], colonne)
-                
+
     def IA_GameUltim(self, caracter):
         """
-        Analyse chaque rangée afin de voir si l'une d'entre elle est quasiment pleine (remplie du même signe et d'un ".") 
+        Analyse chaque rangée afin de voir si l'une d'entre elle est quasiment pleine
+        (remplie du même signe et d'un ".")
 
         Le paramètre caracter définit sur quel caractère se baser
         """
         for ligne in range(self.taille):
-            if self.grille[ligne].count(".") == 1 and self.grille[ligne].count(caracter) == self.taille - 1:
+            if self.grille[ligne].count(".") == 1 and \
+            self.grille[ligne].count(caracter) == self.taille - 1:
                 return (ligne, self.grille[ligne].index("."))
         for colonne in range(self.taille):
             points = [0, None]
@@ -309,9 +314,9 @@ class Grille():
                     points[1] = ligne
                 elif self.grille[ligne][colonne] == caracter:
                     nbCaracters += 1
-            if points[0] == 1 and nbCaracters == self.taille - 1: # renvoie les coordonnées si il reste une place de libre
-                return (points[1], colonne)
-        nbCaracters = 0    
+            if points[0] == 1 and nbCaracters == self.taille - 1:
+                return (points[1], colonne) # renvoie les coordonnées s'il reste une place de libre
+        nbCaracters = 0
         points = [0, None, None]
         for i in range(self.taille):                          #diagonale gauche
             if self.grille[i][i] == ".":
@@ -322,7 +327,7 @@ class Grille():
         if points[0] == 1 and nbCaracters == self.taille - 1:
             return (points[1], points[1])
 
-        nbCaracters = 0    
+        nbCaracters = 0
         points = [0, None, None]
         for i in range(self.taille):                          #diagonale droite
             if self.grille[i][self.taille - 1 - i] == ".":
@@ -344,8 +349,8 @@ class Grille():
 
     def keyboard_gameplay(self, emplacement, player):
         """
-        définit les déplacements du joueur en fonction des touches pressées
-        grace au module "keyboard"  
+        définit les déplacements du sélecteur en fonction des touches pressées
+        grâce au module "keyboard"
         """
         time.sleep(.3)
         key = keyboard.read_key()
@@ -371,20 +376,31 @@ class Grille():
                     emplacement[0] += 1
                     self.clearEtAffiche(emplacement, player)
             elif key == "-":
-                if self.tailleCase - 1 > 0: 
+                if self.tailleCase - 1 > 0:
                     self.tailleCase -= 1
                     self.clearEtAffiche(emplacement, player)
             elif key == "+":
                 self.tailleCase += 1
                 self.clearEtAffiche(emplacement, player)
-            elif key == "esc": exit()
+            elif key == "esc":
+                sys.exit()
             time.sleep(.3)
             key = keyboard.read_key()
         self.nbEnter += 1
 
     def play_tour(self, player, J1, J2, computer, gameplay, robot):
         """
-        adrian
+        Méthode principale de l'objet Grille().
+
+        Cette méthode se charge d'appeler toutes les autres méthodes afin de jouer une manche.
+
+        Paramètres :
+        - player = définit à quel joueur est-ce au tour de jouer
+        - J1 = instance du joueur 1
+        - J2 = instance du joueur 2
+        - computer = si c'est à l'odinateur de jouer
+        - gameplay = si l'on joue avec le clavier
+        - robot = si ce sont les robots qui s'affrontent
         """
         if (computer and player) or robot: #Si c'est à l'ordinateur de jouer
             caracter = "X" if player and robot else "O"
@@ -392,22 +408,28 @@ class Grille():
 
             emplacement = self.IA_GameUltim(caracter) # s'il peut gagner
             if emplacement is None:
-                emplacement = self.IA_GameUltim(ennemi) # s'il peut counter
+                emplacement = self.IA_GameUltim(ennemi) # s'il peut contrer
                 if emplacement is None:
-                    emplacement = self.IA_Game(caracter, ennemi) # s'il peut commencer une stratégie
+                    emplacement = self.IA_Game(caracter, ennemi) # commencer une stratégie
                     if emplacement is None:
-                        emplacement = self.IA_Game(ennemi, caracter) # s'il peut contrer une stratégie
+                        emplacement = self.IA_Game(ennemi, caracter) # contrer une stratégie
                         if emplacement is None:
-                            coins = [coin for coin in [(0, 0), (0, self.taille - 1), (self.taille - 1, 0), (self.taille - 1, self.taille - 1)] \
+                            coins = [coin for coin in [(0, 0), (0, self.taille - 1), \
+                            (self.taille - 1, 0), (self.taille - 1, self.taille - 1)] \
                              if self.libre(coin)]  # les coins
                             if coins:
                                 emplacement = random.choice(coins)
                             else:
-                                emplacement = (random.randint(0, self.taille - 1), random.randint(0, self.taille - 1)) # au pif
+                                emplacement = (random.randint(0, self.taille - 1), \
+                                random.randint(0, self.taille - 1)) # au pif
                                 while not self.libre(emplacement):
-                                    emplacement = (random.randint(0, self.taille - 1), random.randint(0, self.taille - 1))
+                                    emplacement = (random.randint(0, self.taille - 1), \
+                                    random.randint(0, self.taille - 1))
 
-            stdout.write(f"**********\nCoups de l'ordinateur : {emplacement[0]} {emplacement[1]}\n**********\n")
+            stdout.write(f"**********\n\
+Coups de l'ordinateur : {emplacement[0]} {emplacement[1]}\n\
+**********\n")
+
         else:
             if gameplay:
                 emplacement = [0, 0]
@@ -424,12 +446,17 @@ class Grille():
                     self.keyboard_gameplay(emplacement, player)
 
             else:
-                emplacement = input("Joueur " + str(("2" if player else "1")) + " choisissez un emplacement (ligne colonne): ").split()
+                emplacement = input("Joueur " + str(("2" if player else "1")) + \
+                " choisissez un emplacement (ligne colonne): ").split()
 
-                while not len(emplacement) == 2 or not (emplacement[0].isnumeric() and emplacement[1].isnumeric())\
-                 or not self.libre(list(map(int, emplacement))): #vérification du bon type, de la taille et de la place choisie
-                    emplacement = input("Choix Incorrect !\nJoueur " + str(("2" if player else "1"))\
-                     + " choisissez un emplacement (ligne colonne): ").split()
+                while not len(emplacement) == 2 or not (emplacement[0].isnumeric() and \
+                emplacement[1].isnumeric()) or \
+                not self.libre(list(map(int, emplacement))):
+                #vérification du bon type, de la taille et de la place choisie
+
+                    emplacement = input("Choix Incorrect !\n\
+                                         Joueur " + str(("2" if player else "1")) \
+                    + " choisissez un emplacement (ligne colonne): ").split()
 
                 emplacement = list(map(int, emplacement))
 
@@ -438,7 +465,7 @@ class Grille():
         self.affichage()
 
         return self.is_win(player, J1, J2)
-    
+
     def full(self):
         """
         Renvoie True si la grille ne contient plus aucun "."
@@ -448,9 +475,9 @@ class Grille():
 def main():
     """
     fonction appelant d'entrée de jeu toutes les méthodes liées aux paramètres:
-    - robot vs robot 
-    - taille de la grille 
-    - jouer contre un IA 
+    - robot vs robot
+    - taille de la grille
+    - jouer contre un IA
 
     elle a aussi pour but de rendre plus propre le terminal grace à des clears
     """
@@ -461,7 +488,9 @@ def main():
         robot = input("Robot vs Robot ? (O/N) : ") == "O"
 
         computer = not robot and input("Souhaitez-vous jouer avec un ordinateur (O/N) : ") == "O"
-        keyboard_playing = not robot and input("Souhaitez-vous jouer avec les coordonnées ou avec le clavier ? (0/1) : ") == "1"
+
+        keyboard_playing = not robot and \
+        input("Souhaitez-vous jouer avec les coordonnées ou avec le clavier ? (0/1) : ") == "1"
 
         taille_grille = input("Taille grille désirée (min 3) : ")
 
@@ -481,15 +510,18 @@ def main():
                 break
 
             player = not player
-            if robot: time.sleep(.3)
 
-        for _ in range(grille.getNbEnter()): stdin.readline() # Clear le buffer d'entrée
+            if robot:
+                time.sleep(.3)
+
+        for _ in range(grille.getNbEnter()):
+            stdin.readline() # Clear le buffer d'entrée
 
         grille.affichage()
-        
+
         if input(f"Partie terminée.\nPoints joueur 1 : {j1.getPoints()}\nPoints joueur 2 :\
          {j2.getPoints()}\nVoulez-vous relancer ? (O/N) : ") == "N": break
 
-        os.system("cls" if os.name == "nt" else "clear")      
+        os.system("cls" if os.name == "nt" else "clear")
 
 main()
