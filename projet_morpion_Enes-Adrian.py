@@ -92,28 +92,20 @@ class Grille():
             self.grille[i1][i2] = 'N'           # Sélecteur
 
         for ligne in range(self.taille):
-            for _ in range(self.taille):
-                stdout.write('+-' + '-' * 2 * (self.tailleCase - 1))
-            stdout.write('+\n')
-
-            for _ in range(self.tailleCase // 2):  # Intervient pour le zoom
-                for _ in range(self.taille):
-                    stdout.write("|" + " " * (self.tailleCase * 2 - 1))
-                stdout.write("|\n")
+            stdout.write(('+-' + '-' * 2 * (self.tailleCase - 1)) * \
+            self.taille + '+\n') # ligne du haut
+            
+            stdout.write((("|" + " " * (self.tailleCase * 2 - 1)) * self.taille + "|\n") * \
+            (self.tailleCase // 2)) # Intervient pour le zoom
 
             for symbole in self.grille[ligne]:
                 stdout.write('|' + ' ' * (self.tailleCase - 1) + symbole + \
                 ' ' * (self.tailleCase - 1))
 
-            for _ in range(self.tailleCase // 2): # Intervient pour le zoom
-                stdout.write("|\n")
-                for _ in range(self.taille):
-                    stdout.write("|" + " " * (self.tailleCase * 2 - 1))
-
-            stdout.write("|\n")
-        for _ in range(self.taille):
-            stdout.write('+-' + '-' * 2 * (self.tailleCase - 1))
-        stdout.write('+\n\n')
+            stdout.write(("|\n" + ("|" + " " * (self.tailleCase * 2 - 1)) * self.taille) * \
+            (self.tailleCase // 2) + "|\n") # Intervient pour le zoom
+        
+        stdout.write(('+-' + '-' * 2 * (self.tailleCase - 1)) * self.taille + '+\n\n')
 
         if i1 > -1:
             self.grille[i1][i2] = tmp_sign
